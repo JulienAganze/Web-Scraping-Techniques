@@ -3,7 +3,7 @@ import scrapy
 
 class ScratchQuotes(scrapy.Spider):
     name = 'quotes'
-    start_urls = ['https://quotes.toscrape.com/page/10/']
+    start_urls = ['https://quotes.toscrape.com/page/1/']
 
 
     def parse(self, response):
@@ -11,12 +11,15 @@ class ScratchQuotes(scrapy.Spider):
         for div in response.css('.quote'):
             quote = div.css('.text::text').get()
             author = div.css('.author::text').get()
+            tags = div.css('.tags a::text').getall()
             yield {
-                'quote':quote.replace('"','').replace('"',''),
-                'author':author
+                'quote':quote.replace('"','').replace('"','').replace(',',''),
+                'author':author,
+                'tags':tags
             }
         
-        if response.css('li.next').get():
-            print("\n\n\n\n NEXT button available")
-        else:
-            print("\n\n\n\n last page")
+        nextpageurl = response.css('li.next a::attr(href)').get()
+        print(nextpageurl)
+        if nextpageurl:
+            yield response.follow(nextpageurl, callback=self.parse)
+        
